@@ -11,10 +11,18 @@ const client = new Client({
 });
 
 const timeoutDuration = 1 * 60 * 1000; // 1 นาที
-const allowedLinkChannels = ['1295722077407674429', '1295919181186859081' , '1295925449792163921' , '1334480754519969896' ]; // ห้องที่อนุญาตให้ส่งลิงก์
+const allowedLinkChannels = ['1295722077407674429', '1353692814684454974', '1295491082834022462']; // ห้องที่อนุญาตให้ส่งลิงก์
+const allowedDomains = ["youtube.com", "youtu.be", "facebook.com", "fb.watch"]; // โดเมนที่อนุญาต
 const forbiddenWords = ["พ่อ", "มึง", "ตาย", "แม่", "พ่อง", "มุง" , "ควย" , "หี" , "กระหรี่" , "เหี้ย" , "หลี่"];
 const messageCache = new Map();
 const isLink = (msg) => /(https?:\/\/[^\s]+)/g.test(msg);
+
+// ตรวจสอบว่าลิงก์เป็นของ YouTube หรือ Facebook หรือไม่
+const isAllowedLink = (msg) => {
+  const match = msg.match(/https?:\/\/([^\s/]+)/);
+  if (!match) return false;
+  return allowedDomains.some(domain => match[1].includes(domain));
+};
 
 client.once("ready", () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
@@ -52,13 +60,14 @@ client.on("messageCreate", async (message) => {
   const isLinkMessage = isLink(content);
   const containsForbiddenWord = forbiddenWords.some(word => content.includes(word));
 
-  // ❌ กันส่งลิงก์ในห้องที่ไม่อนุญาต
-  if (isLinkMessage && !allowedLinkChannels.includes(message.channel.id) && 
+  // ❌ กันส่งลิงก์ที่ไม่ได้รับอนุญาตในห้องปกติ (ยกเว้น YouTube & Facebook)
+  if (isLinkMessage && !isAllowedLink(content) && 
+      !allowedLinkChannels.includes(message.channel.id) && 
       !message.member.permissions.has(PermissionsBitField.Flags.ManageMessages) && 
       !message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
     await message.delete();
     await timeoutUser(message.member, `ข้อความที่ถูกลบ: "${message.content}"`, logChannel);
-    return message.channel.send(`${message.author} 🚫 ห้ามส่งลิงก์ในห้องนี้!`).then(msg => setTimeout(() => msg.delete(), 3000));
+    return message.channel.send(`${message.author} 🚫 ห้ามส่งลิงก์ในห้องนี้ ยกเว้น YouTube/Facebook!`).then(msg => setTimeout(() => msg.delete(), 3000));
   }
 
   // ❌ กันคำต้องห้าม
