@@ -85,3 +85,12 @@ client.on("messageCreate", async (message) => {
 
 // รันบอท
 client.login(process.env.TOKEN);
+
+// ให้รันเว็บเซิร์ฟเวอร์ (สำหรับ Render.com)
+const express = require("express");
+const app = express();
+
+const PORT = process.env.PORT || 3000;  // ถ้าไม่ได้รับ PORT จาก Render จะใช้พอร์ต 3000
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
